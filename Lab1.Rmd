@@ -1,0 +1,111 @@
+---
+title: "MST371 Lab1"
+author: "Nishanth Girish"
+date: '2023-03-03'
+output: word_document
+---
+
+```{r}
+#Impoering the necessary libraries:
+library(tseries)
+library(astsa)
+library(forecast)
+
+data()
+```
+DATASET DESCRIPTION:
+
+The data set chosen for this assignment is the ICRISAT data of rice yield of Kodagu district in Karnataka for the years 1966 to 2017. It shows the rice yield (kg/ha) per year of Kodagu district for the years 1966-2017. It has 52 observations.
+
+```{r}
+#Reading the data:
+data <- read.csv(file.choose())
+head(data)
+```
+
+EXPLORATORY DATA ANALYSIS:
+
+```{r}
+#Removing unnecessary columns:
+data_clean <- data[c(2,6)]
+colnames(data_clean) <- c("Year","Yield")
+head(data_clean)
+attach(data_clean)
+```
+```{r}
+#Summary statistics:
+summary(Yield)     
+
+#Shapiro-Wilk test for normality:
+shapiro.test(Yield)  
+```
+INTERPRETATION:
+
+The mean yield is 2204kg/ha, median yield is 2248kg/ha; minimum yield is 1455kg/ha; maximum yield is 3099kg/ha. 
+
+The observations of the Yield column are normally distributed as indicated by the Shapiro-Wilk test [p-value is 0.664].
+
+
+```{r}
+#Checking the class of the object:
+class(data_clean$Yield)
+```
+
+```{r}
+#Converting the class to a time series object:
+df <- ts(Yield, start = 1966, end = 2017, frequency = 1)
+class(df)
+```
+The data has now been converted to a time series object.
+
+
+```{r}
+# Time series plot
+ts.plot(df)
+```
+
+INTERPRETATION:
+
+From the time series plot, it is clear that there is a trend component as there is an increasing trend.
+There is no seasonal component. Hence, we can say that this is an additive model as only trend and error components are present [zt = mt + et]. 
+
+```{r}
+# Autocorrelation function plot:
+acf(df)
+
+#Augmented Dickey-Fuller Test for Stationarity:
+#H0: non-stationary
+#H1: stationary
+adf.test(df)
+```
+
+INTERPRETATION:
+
+From the ACF plot, it can be observed that the autocorrelation gradually decreases as lag increases. This implies that there is a trend in the data. Hence, the data is non-stationary.
+
+Non-stationarity can be confirmed by the ADF test. The p-value is 0.1622 which implies that we fail to reject the null hypothesis( non-stationary). Hence, we conclude that the data is indeed non-stationary.
+
+```{r}
+# Applying log transformation:
+df2 <- ts(log(Yield), start = 1966, end = 2017, frequency = 1)
+class(df2)
+```
+
+```{r}
+#Time series plot:
+ts.plot(log(df))
+
+#ACF plot:
+acf(log(df),lag =50)
+
+#Augmented Dickey-Fuller Test for stationarity
+#H0: non-stationary
+#H1: stationary
+adf.test(log(df))
+```
+
+INTERPRETATION:
+
+Even after applying logarithmic transformation, we observe from the time series plot and ACF plot that there is a trend component. Hence, the data is non-stationary.
+This is confirmed mathematically by the ADF test [p-value = 0.167].
+

@@ -1,0 +1,177 @@
+---
+title: "CAT2_2248111"
+author: "Nishanth Girish"
+date: "2023-04-27"
+output: word_document
+---
+
+```{r}
+#Importing the necessary libraries:
+library(tseries)
+library(astsa)
+library(forecast)
+library(seastests)
+```
+
+```{r}
+#Reading the data:
+data <- read.csv(file.choose())
+
+#Extracting the target column and converting to a time series object:
+data1 <- ts(data$Annual.common.stock.price..U.S...1871.to.1970, start = 1871 , end = 1969, frequency = 1)
+data1
+```
+
+
+```{r}
+#Time series and ACF plot:
+ts.plot(data1 , ylab="Stock price", main ="Time series plot")
+
+Acf(data1, main =" ACF plot")
+```
+
+INTERPRETATION:
+
+From the time series plot we can observe that there is a trend component. A seasonal component is not present. The model is additvie in nature [Zt = mt + et]. 
+The ACF plot indicates that the ACF does not rapidly decrease to zero as lag increases and some of the ACF goes beyond the threshold limit. 
+The data is not stationary.
+
+
+
+
+```{r}
+#Method of moving average of order 3:
+ma1 <- ma(data1, order =3)
+
+
+error <- data1- ma1
+ts.plot(error,ylab="Stock prices",  main = "Time series plot after MA smoothing")
+
+```
+INTERPRETATION:
+We have applied the method of moving average smoothing of order 3 and removed the trend component from the data as evident fromt the time series plot.
+
+```{r}
+#length of the error object:
+length(error)
+```
+
+```{r}
+#Removing the missing values:
+newerror <- error[-1]
+newerror1 <- newerror[-98]
+
+#ACF and PACF plots after MA smoothing
+acf(newerror1, main = "ACF plot after MA smoothing") #tells us about the order of MA. MA(1)
+pacf(newerror1,main = "PACF plot after MA smoothing") #tells us about the order of AR. AR(3)
+
+```
+
+INTERPRETATION:
+
+The ACF plot indicates that 2 lags are significant and the PACF plot indicates that 3 lags are significant.
+From the ACF and PACF plots of the detrended data, we suspect an ARMA(3,2) process.
+
+
+```{r}
+
+# Automatically fitting an  ARMA model using in-built function:
+fit <- auto.arima(newerror1,seasonal=FALSE)     
+summary(fit)
+```
+
+INTERPRETATION:
+
+Using the in-built function in R, we get an ARMA(0,2) process with moving average process parameters theta1 = -0.7464  and theta2 = -0.1924.
+AIC value of the model is 313.06 and BIC of the model is 320.78. The variance of the model is 1.388.
+RMSE is 1.1659
+
+
+
+```{r}
+# We suspect an ARMA of different orders from the PACF and ACF plots.
+
+# Fitting ARMA models based on the ACF and PACF plots of the stationary data:
+fit2 <- arima(newerror1, order = c(3,0,2))
+summary(fit2)
+```
+
+INTERPRETATION:
+We fit ARMA(3,2) model with AR parameters phi1, phi2, phi3:  -0.7052, 0.0228, -0.2378 respectively,
+and MA parameters theta1 and theta2: -0.1013,  -0.8986 respectively.
+The AIC value of the model is 313.42 and the variance of the model is 1.215. RMSE is 1.1023.
+
+```{r}
+# We suspect an ARMA of different orders from the PACF and ACF plots.
+
+# Fitting ARMA models based on the ACF and PACF plots of the stationary data:
+fit3 <- arima(newerror1, order = c(3,0,1))
+summary(fit3)
+```
+
+```{r}
+#Residual analysis for model 1:
+r = resid(fit)
+
+acf(r, main = "ACF plot of the residuals")            #non-significant acf at different lags.
+
+#Shapiro-Wilk test to check the normality of the residuals:
+#H0: Residuals are normal.
+#H1: Residuals are not normal.
+shapiro.test(r)  #p-value < 0.05 -> null hypothesis 
+#Q-Q plot:
+qqnorm(r)
+qqline(r)
+
+#Box-Pierce test to examine the null hypothesis of independence.
+#H0: There is no significant autocorrelation.
+#H1: There is some significant autocorrelation.
+Box.test(r,lag = 2) #lag = p + q; p=0, q= 2
+
+```
+
+INTERPRETATION:
+
+1. From the Shapiro-Wilk test, we get p-value < 0.05. Hence, we reject the null hypothesis that the errors are normally distributed and conclude that the errors are not normally distributed.
+
+2. The Q-Q plot also depicts that some of the errors are far from the reference line and hence we conclude that the errors are not normal.
+
+3. From the Box-Pierce test, we get p-value 0.2781. Hence, we fail to reject the null hypothesis that there is no significant autocorrelation.
+
+4. ACF plot indicates that there are no significant ACF values. Errors are uncorrelated.
+
+```{r}
+
+#Residual analysis for model 2:
+r = resid(fit2)
+
+acf(r, main = "ACF plot of the residuals")            #non-significant acf at different lags.
+
+#Shapiro-Wilk test to check the normality of the residuals:
+#H0: Residuals are normal.
+#H1: Residuals are not normal.
+shapiro.test(r)  #p-value < 0.05 -> null hypothesis 
+#Q-Q plot:
+qqnorm(r)
+qqline(r)
+
+#Box-Pierce test to examine the null hypothesis of independence.
+#H0: There is no significant autocorrelation.
+#H1: There is some significant autocorrelation.
+Box.test(r,lag = 5) #lag = p + q; p=3, q= 2
+
+
+```
+
+INTERPRETATION:
+
+1. From the Shapiro-Wilk test, we get p-value < 0.05. Hence, we reject the null hypothesis that the errors are normally distributed and conclude that the errors are not normally distributed.
+
+2. The Q-Q plot also depicts that some of the errors are far from the reference line and hence we conclude that the errors are not normal.
+
+3. From the Box-Pierce test, we get p-value 0.9111. Hence, we fail to reject the null hypothesis that there is no significant autocorrelation.
+
+4. ACF plot indicates that there are no significant ACF values. Errors are uncorrelated.
+
+CONCLUSION:
+The second model performs slightly better than the first model as variance and RMSE value is less. There is not much difference between the AIC values of both the models.

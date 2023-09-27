@@ -1,0 +1,76 @@
+---
+title: "MST371_CAT1"
+author: "Nishanth Girish"
+date: '2023-04-03'
+output: word_document
+---
+
+```{r}
+#Importing necessary libraries:
+library(forecast)
+library(seastests)
+library(astsa)
+library(tseries)
+```
+
+DATASET DESCRIPTION:
+The given dataset is the 'globtemp' dataset which is contained in the astsa library of R software. The data contained is the global mean land-ocean temperature deviations (from 1951-1980 average), measured in degrees centigrade, for the years 1880-2015.
+
+```{r}
+#Loading the dataset:
+data <- globtemp
+data
+```
+
+
+```{r}
+#Time series plot:
+ts.plot(data, ylab ='Temperature deviation', main = 'Time series plot')
+
+#ACF Plot:
+acf(data, main = 'ACF Plot')
+```
+
+INTERPRETATION:
+
+From the time series plot, it is clear that the data follows an increasing trend. No seasonal component can be observed. Hence, it is an additive model [Zt = mt + et].
+From the ACF plot, it can be observed that the ACF is not rapidly decreasing to zero. This implies that the data is not stationary.
+
+```{r}
+#Differencing to remove trend component
+td <- diff(data)
+
+#Time series and ACF plot afte differencing:
+ts.plot(td, ylab ='Temperature deviation', main = 'Time series plot after differencing:')
+acf(td, main = 'ACF plot after differencing:')
+```
+INTERPRETATION:
+
+The method of differencing was applied to remove the trend component from the data and make it stationary.
+The time series plot after differencing does not show trend or seasonal variation and appears to be random in nature.
+The ACF plot after differencing shows that the ACF rapidly drops to zero after a few lags indicating that there is no trend or seasonal component. It can be concluded that the data is now stationary. 
+
+```{r}
+#PACF Plot:
+pacf(td , main =' PACF Plot:')
+```
+
+INTERPRETATION:
+
+The PACF plot shows that the PACF cuts off after 3 lags. Thus, AR(3) process can be suspected.
+
+```{r}
+#Give whatever order that we suspect from the PACF
+
+#Fitting an AR(3) model
+fit <- arima(td,order = c(3,0,0))
+fit
+```
+
+INTERPRETATION:
+
+An AR(3) model was fitted onto the data. 
+The autoregressive parameters obtained are: -0.3669,  -0.3421,  -0.2363.
+The intercept is 0.0071.
+
+

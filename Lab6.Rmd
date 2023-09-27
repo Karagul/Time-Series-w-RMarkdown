@@ -1,0 +1,131 @@
+---
+title: "Untitled"
+author: "Nishanth Girish"
+date: "2023-05-04"
+output: word_document
+---
+
+```{r}
+#impoering the necessary libraries:
+library(tseries)
+library(astsa)
+library(forecast)
+```
+
+DATASET DESCRIPTION:
+
+The data is based only on surface air temperature data obtained from meteorological stations. The data are temperature deviations (from 1951-1980 average), measured in degrees centigrade, for the years 1880-2009.
+
+
+
+```{r}
+#Time series and ACF plot:
+data1 <- gtemp2
+ts.plot(data1 , ylab="Degrees(Celsius)", main ="Time series plot")
+
+Acf(data1, main =" ACF plot")
+```
+
+INTERPRETATION:
+
+From the time series plot, it can be concluded that the data has a trend component and it does not have a seasonal component. It is not stationary. Hence, we can say that this is an additive model as trend and error components are present [zt = mt +  et].
+From the ACF plot we can observe that there is no repeating pattern and the ACF does not rapidly decreaase to 0.
+
+
+```{r}
+#Method of differencing:
+diff1 <- diff(data1)     #applying differencing.
+
+
+
+#Time series plot and ACF of data after differencing:
+ts.plot(diff1,ylab="Degrees(Celsius)" , main="Time series plot after differencing")
+acf(diff1, main="ACF plot after differencing")
+pacf(diff1, main ="PACF Plot after differencing")
+```
+
+INTERPRETATION:
+We observe that after differncing the data becomes stationary as evident from the time series plot[the data follows a random pattern] and ACF plot [the ACF decreases to zero rapidly].
+
+```{r}
+#Fitting an AR(1) model:
+fit <- arima(diff1, order = c(1,0,0))
+summary(fit)
+```
+
+The AR parameter phi is -0.3051. 
+
+```{r}
+#Residual analysis:
+r = resid(fit)
+
+acf(r, main = "ACF plot of the residuals")            #non-significant acf at different lags.
+
+#Shapiro-Wilk test to check the normality of the residuals:
+#H0: Residuals are normal.
+#H1: Residuals are not normal.
+shapiro.test(r)  #p-value >0.05 -> fail to reject null hypothesis -> normal residuals
+
+#Box-Pierce test to examine the null hypothesis of independence.
+#H0: There is no significant autocorrelation.
+#H1: There is some significant autocorrelation.
+Box.test(r, lag = 1) #lag = p + q
+
+#Q-Q plot:
+qqnorm(r)
+qqline(r)
+```
+
+INTERPRETATION:
+
+1. From the ACF plot of the residuals we can observe that it is stationary as all the ACFs for different lags lie within the threshold limit and rapidly decreases to zero.
+
+2. The p-value of the Shapiro-Wilk test is 0.3844 (> 0.05). Hence, we fail to reject the null hypothesis that the residuals are normal and conclude that the residuals are  normally distributed.
+
+3. The p-value of the Box-Pierce test is 0.343 (> 0.05). Hence, we fail to reject the null hypothesis that there is no significant autocorrelation.
+
+4. From the Q-Q plot it is evident that the residuals are approximately normally distributed.
+Hence, the assumptions are satisfied for the residual analysis.
+
+```{r}
+#Forecasting 3 steps ahead for the AR(1) model using the in-built function
+forecast(fit,h=3)
+```
+
+INTERPRETATION:
+
+The 3 step ahead forecasts for the fitted AR(1) model using the in-built function for the years 2010,2011,2012 are: -0.042641919, 0.022235532, 0.002441299 respectively. This function uses MLE to forecast future values.
+Note: The forecasts are for the differenced data.
+
+```{r}
+#Method of Minimum Mean Square Error: 
+phi = -0.3051
+
+Zt_1 = phi * diff1[length(diff1)]
+Zt_1
+
+Zt_2 = (phi)^2 * diff1[length(diff1)]
+Zt_2
+
+Zt_3 =(phi)^3 * diff1[length(diff1)]
+Zt_3
+```
+
+INTERPRETATION:
+
+The 3 step ahead forecasts for the fitted AR(1) model using the MMSE  for the years 2010,2011,2012 are: -0.051867, 0.01582462, -0.004828092 respectively. 
+Note: The forecasts are for the differenced data.
+
+```{r}
+#Forecast error
+forecast =c(-0.042641919, 0.022235532, 0.002441299)
+MMSE=c(-0.051867, 0.01582462, -0.004828092)
+ 
+forecast_error = forecast - MMSE
+mean(forecast_error)
+```
+
+INTERPRETATION:
+
+The forecast error obtained is 0.0076 which indicates that the forecasts obtained are appropriate.
+We observe that the forecasted values obtained from the in-built forecast() method and the forecasts obtained from MMSE method are approximately similar for the AR(1) process.

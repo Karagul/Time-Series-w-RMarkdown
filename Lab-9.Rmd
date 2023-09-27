@@ -1,0 +1,50 @@
+---
+title: "MST371_CAC-1"
+author: "Nishanth Girish"
+date: '2023-03-26'
+output: word_document
+---
+
+
+```{r}
+#Importing the necessary libraries:
+library(tseries)
+library(astsa)
+library(forecast)
+library(seastests)
+library(TTR)
+```
+
+
+DATASET DESCRIPTION:
+
+The dataset used for this assignment is the birth dataset which is contained in the 'astsa' library of R. It contains the monthly live births (adjusted) in thousands for the United States for the years 1948 to 1979. It has 373 observations.
+
+```{r}
+#Checking for seasonality using seasonal sub-series plot:
+monthplot(birth, ylab= "No. of births" , xlab= "Month", xaxt= "n", main= "Seasonal deviation plot: US monthly live births")
+axis(1, at=1:12, labels=month.abb, cex=0.8)
+
+#Confirming seasonality:
+isSeasonal(birth, test = "combined", freq = 12)
+```
+
+INTERPRETATION:
+
+The seasonal subseries plot indicates the data exhibits a seasonal pattern.
+The seasonality is not changing over time. The horizontal line displays the mean value for each month over the time series.
+
+The data is seasonal in nature as confirmed by the combined-test.
+
+```{r}
+# Calculate the seasonal moving average with a window size of 12
+smoothed <- SMA(birth, n = 12)
+
+# Plot the original time series and the smoothed values:
+plot(birth, xlab ="Years", ylab ="No. of births", main = "Time series plot ")
+plot(smoothed,xlab ="Years ",ylab="No. of births" ,main = "Time series plot after seasonal moving average smoothing", col= "red")
+```
+
+INTERPRETATION:
+
+We observe that after applying the method of seasonal moving average smoothing, the seasonal component is removed.

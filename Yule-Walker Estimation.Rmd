@@ -1,0 +1,153 @@
+---
+title: "Yule-Walker Estimation"
+author: "Nishanth Girish"
+date: "2023-06-20"
+output: html_document
+---
+
+```{r}
+library(tseries)
+library(astsa)
+```
+
+```{r}
+set.seed(2017)
+```
+
+#AR(2)
+```{r}
+sigma = 4
+phi = NULL
+phi[1:2] =c(1/3, 1/2)
+phi
+```
+```{r}
+n = 10000
+```
+
+```{r}
+ar.process = arima.sim(n, model = list(ar = c(1/3, 1/2)), sd =4)
+
+ar.process[1:5]
+```
+# r = Rb -> rR^-1 = b
+```{r}
+# r matrix
+r = NULL
+r[1:2] = acf(ar.process, plot = F)$acf[2:3]
+```
+
+```{r}
+R = matrix(1,2,2)
+R
+
+```
+
+```{r}
+# R matrix
+R[1,2] =r[1]
+R[2,1] = r[1]
+R
+```
+
+```{r}
+# b matrix
+b = matrix(r, nrow =2, ncol = 1)
+b
+```
+
+```{r}
+# Estimating phis
+phi.hat = solve(R,b)
+phi.hat
+```
+
+```{r}
+#variance estimation
+c0 = acf(ar.process, type = "covariance", plot = F)$acf[1]
+var.hat = c0 * (1 - sum(phi.hat*r))
+var.hat 
+```
+
+```{r}
+#plot 
+par(mfrow = c(3,1))
+plot(ar.process, main = 'simulated AR(2)' )
+acf(ar.process, main =" ACF ")
+pacf(ar.process, main = "PACF")
+```
+
+#AR(3)
+
+```{r}
+set.seed(2017)
+```
+
+```{r}
+sigma = 4
+phi = NULL
+phi[1:3] =c(1/3, 1/2, 7/100)
+phi
+
+n = 100000
+```
+
+
+```{r}
+ar.process = arima.sim(n, model = list(ar = c(1/3, 1/2, 7/100)), sd =4)
+
+ar.process[1:5]
+```
+
+
+```{r}
+# r matrix
+r = NULL
+r[1:3] = acf(ar.process, plot = F)$acf[2:4]
+r
+```
+
+
+```{r}
+R = matrix(1,3,3)
+R
+```
+
+
+```{r}
+# R matrix
+R[1,2] =r[1]
+R[1,3] =r[2]
+R[2,1] = r[1]
+R[2,3] =r[1]
+R[3,1] =r[2]
+R[3,2] =r[1]
+R
+```
+
+
+```{r}
+b = matrix(r, nrow =3, ncol = 1)
+b
+```
+
+```{r}
+# Estimating phis
+phi.hat = solve(R,b)
+phi.hat
+```
+```{r}
+#variance estimation
+c0 = acf(ar.process, type = "covariance", plot = F)$acf[1]
+var.hat = c0 * (1 - sum(phi.hat*r))
+var.hat 
+```
+
+```{r}
+#plot 
+par(mfrow = c(3,1))
+plot(ar.process, main = 'simulated AR(3)' )
+acf(ar.process, main =" ACF ")
+pacf(ar.process, main = "PACF")
+```
+

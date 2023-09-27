@@ -1,0 +1,168 @@
+---
+title: "MST371_2248111_Lab4"
+author: "Nishanth Girish"
+date: '2023-03-24'
+output: word_document
+---
+
+
+```{r}
+#Importing the necessary libraries:
+library(tseries)
+library(astsa)
+library(forecast)
+library(seastests)
+```
+
+DATASET DESCRIPTION:
+
+The dataset used for this assignment is the birth dataset which is contained in the 'astsa' library of R. It contains the monthly live births (adjusted) in thousands for the United States for the years 1948 to 1979. It has 373 observations.
+
+
+```{r}
+#Loading the dataset:
+
+data1 <- birth
+data1
+```
+
+
+```{r}
+#Time series and ACF plot:
+
+ts.plot(data1, ylab = "Number of births", main ="Time series plot")
+
+Acf(data1, main =" ACF plot")
+```
+
+INTERPRETATION:
+
+From the time series plot, it can be concluded that the data has a trend component as well as it has a seasonal component. Hence, we can say that this is an additive model as seasonal, trend and error components are present [zt = mt + st + et].
+From the ACF plot also we can observe the seasonality as the ACF is a repeating pattern.
+
+```{r}
+#Checking for seasonality:
+
+#Seasonal sub-series plot:
+monthplot(data1, ylab= "No. of births" , xlab= "Month", xaxt= "n", main= "Seasonal deviation plot: US monthly live births")
+axis(1, at=1:12, labels=month.abb, cex=0.8)
+
+#Confirming seasonality:
+isSeasonal(data1, test = "combined", freq = 12)
+isSeasonal(data1, test = "qs", freq = 12)
+isSeasonal(data1, test = "kw", freq = 12)
+isSeasonal(data1, test = "welch", freq = 12)
+isSeasonal(data1, test = "fried", freq = 12)
+```
+
+INTERPRETATION:
+
+The seasonal subseries plot indicates the data exhibit a seasonal pattern.
+The seasonality is not changing over time. The horizontal line displays the mean value for each month over the time series.
+
+The data is seasonal in nature as confirmed by the combined-test, Kruskal-Walis test, Friedman test, Welch test, QS test.
+
+
+```{r}
+#Method of differencing:
+
+#Applying differencing to remove seasonal component.
+sd <- diff(data1,lag=12)   
+
+#We will apply differencing again to remove trend component:
+
+td <- diff(sd)             #applying differncing to remove trend component.
+
+#Time series plot and ACF of data after differencing:
+ts.plot(td, ylab="Number of births", main="Time series plot after differencing")
+acf(td, main="ACF plot after differencing")
+
+#Augmented Dickey-Fuller test:
+#H0: Data is non-stationary
+#H1: Data is stationary
+adf.test(td)
+```
+
+INTERPRETATION:
+
+We observe that after differencing twice to remove the seasonal and trend components, the data becomes stationary as evident from the time series plot[the data follows a random pattern]. The ACF plot also reveals that the ACF for different lags are within the threshold.
+Stationarity can be confirmed by the Augmented Dickey-Fuller test.
+The p-value is 0.01 which indicates that we reject the null hypothesis that the data is non-stationary. Hence, we conclude that the data is stationary in nature.
+
+```{r}
+#Ordinary least squares:
+
+#Estimating and removing trend component:
+time <- seq(1:length(data1))
+
+#Increasing the order:
+trend1 <- lm(birth ~ time )
+trend2 <- lm(birth ~ time +I(time^2))
+trend3 <- lm(birth ~ time +I(time^2) + I(time^3))
+trend4 <- lm(birth ~ time +I(time^2)+ I(time^3) + I(time^4) )
+trend5 <- lm(birth ~ time +I(time^2) + I(time^3) +I(time^4) +I(time^5))
+
+error1 <- residuals(trend1) #extracted version
+error2 <- residuals(trend2) #extracted version
+error3 <- residuals(trend3) #extracted version
+error4 <- residuals(trend4) #extracted version
+error5 <- residuals(trend5) #extracted version
+
+#Time series plots of the extracted versions.
+par(mfrow = c(2,2))
+ts.plot(error2,ylab="Births")
+ts.plot(error3,ylab="Births")
+ts.plot(error4,ylab="Births")
+ts.plot(error5,ylab="Births")    
+
+#ACF plots of the extracted versions.
+par(mfrow = c(2,2))
+Acf(error2,main="")
+Acf(error3,main="")
+Acf(error4,main="")
+Acf(error5,main="")
+
+#not stationary
+#all the dependencies not captured
+
+#Performing seasonal differncing to remove seasonal component.
+sd1 <- diff(error5,lag=12)
+tsdisplay(sd1, main = "Time series, ACF & PACF plots:")
+```
+
+INTERPRETATION:
+
+We applied the method of OLS estimation using different orders. However, a seasonal component is still present as evident from the ACF and time series plots. The ACF is not rapidly decreasing to zero after a few lags. This indicates that the data is non-stationary. All dependencies are not captured. We stop after order 5 as there is no change in ACF after order 5. 
+
+We then perform seasonal differencing on the extracted version[trend component removed]. We observe that the data still has not achieved stationarity as evident from the ACF plot [The ACF is not rapidly decreasing to zero after certain lags.].
+
+```{r}
+#Method of moving average smoothing:
+
+#Estimating and removing trend component:
+ma1 <- ma(data1, order =3) #Moving average of order 3.
+
+error <- data1 - ma1
+ts.plot(error, ylab = "No. of Births", main = "Time series plot after MA smoothing")
+
+length(error)
+newerror <- error[-1]        
+newerror1 <- newerror[-372]    #removing missing values from the extracted version
+
+acf(newerror1, main = "ACF plot after MA smoothing")
+
+
+#Removing seasonal component:
+sd2 <- diff(newerror1,lag = 12)
+tsdisplay(sd2, main="Time series, ACF & PACF plots:")
+
+#Augmented Dickey-Fuller test
+#H0: non-stationary
+#H1: stationary
+adf.test(sd2)      #stationary
+```
+
+INTERPRETATION:
+
+We applied a moving average smoothing of order 3 to estimate and remove trend component. We then removed the seasonal component by performing seasonal differencing. From the time series plot of the extracted version, we observe that the data follows a random pattern indicating that it might be stationary. The ACF also rapidly decrease to zero after the first lag.
+We confirm stationarity using Augmented Dickey-Fuller test. The p-value is < 0.01 which implies that we reject the null hypothesis( data is non-stationary). Hence, we conclude that the data is indeed stationary.

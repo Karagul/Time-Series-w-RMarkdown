@@ -1,0 +1,841 @@
+---
+title: "Time Series Class-1"
+author: "Nishanth Girish"
+date: '2023-02-25'
+output: word_document
+---
+
+
+
+
+```{r}
+#impoering the necessary libraries:
+library(tseries)
+library(astsa)
+library(forecast)
+```
+
+
+```{r}
+#Reading the data:
+data("gdp")
+class(gdp)   #checking whether it is a time series object
+
+#df <- ts(gdp)  #converting an object to time series to time series object
+
+```
+```{r}
+gdp
+```
+
+
+```{r}
+# TIme series plot:
+ts.plot(gdp)
+```
+
+
+```{r}
+data("AirPassengers")
+class(AirPassengers)
+```
+
+```{r}
+ts.plot(AirPassengers)
+```
+
+
+```{r}
+ts1 <- log(AirPassengers)  #converting to additive model
+ts.plot(ts1)
+```
+
+```{r}
+set.seed(69)
+data <- rnorm(100,0,1)
+
+# converting to a time series object:
+data2 <- ts(data, start = 1912  , end = 2012, frequency = 4)   
+ts.plot(data2)
+
+```
+
+
+```{r}
+mean(data2[1:20])
+mean(data2[20:40])
+
+
+var(data2[1:20])
+var(data2[20:40])
+```
+
+
+```{r}
+mean(gdp[1:40])
+mean(gdp[40:80])
+
+
+var(gdp[1:40])
+var(gdp[40:80])       #not stationary
+```
+
+
+```{r}
+#ACF of random series:
+set.seed(1234)
+rdata <- rnorm(1000,0,1)
+ts.plot(rdata)
+
+acf(rdata, lag =50) 
+```
+
+
+```{r}
+#ACF of trend component:
+data(globtemp)
+class(globtemp)
+
+
+ts.plot(globtemp)   #additive in nature, no seasonal component
+acf(globtemp, lag = 50)       #non-stationary
+```
+
+
+```{r}
+data = seq(1:100)
+data2 <- data[100:1]
+
+ts.plot(data2)
+acf(data2)      #non-stationary
+#decreasing pattern which is not tending to zero rapidly.
+```
+
+
+```{r}
+#ACF of seasonal data
+data3 <- read.csv(file.choose())
+data3
+attach(data3)
+
+airline <- ts(Miles, start = 1963, end = 1970, frequency = 12)
+#airline
+ts.plot(airline)
+acf(airline)            #seasonal units
+
+
+library(forecast)
+Acf(airline)          #time units
+```
+
+
+
+```{r}
+data("gnp")
+
+```
+
+
+```{r}
+ts.plot(gnp)
+```
+```{r}
+gnp
+```
+
+
+```{r}
+## method of differencing.
+newgnp <- diff(gnp)
+#length(newgnp)
+```
+
+
+```{r}
+ts.plot(newgnp)  #stationary
+acf(newgnp)
+```
+
+
+```{r}
+#method of OLS:
+#length(globtemp)
+
+time <- seq(1:length(globtemp))
+time
+```
+
+
+```{r}
+trend <- lm(globtemp ~ time)
+summary(trend)
+```
+
+
+```{r}
+error <- residuals(trend)
+
+ts.plot(error) #not stationary #all the dependencies not captured.
+acf(error)
+```
+
+
+```{r}
+trend2 <- lm(globtemp ~ time + I(time ^2 ))
+summary(trend2)
+
+```
+
+
+```{r}
+error2 <- residuals(trend2)
+
+ts.plot(error2) #stationary 
+acf(error2)
+```
+
+
+```{r}
+trend3 <- lm(globtemp ~ time + I(time ^2 )+ I(time^3))
+summary(trend3)
+```
+
+
+```{r}
+error3 <- residuals(trend3)   #extracted version.
+
+ts.plot(error3) #stationary 
+acf(error3)
+```
+
+
+```{r}
+#method of OLS:
+#length(gnp)
+
+time <- seq(1:length(gnp))
+time
+```
+
+
+```{r}
+trend <- lm(gnp ~ time)
+summary(trend)
+```
+
+
+```{r}
+error <- residuals(trend)
+
+ts.plot(error) #not stationary #all the dependencies not captured.
+acf(error)
+```
+```{r}
+trend <- lm(gnp ~ time + I(time^2) + I(time^3))
+#ACF gets worse after order 4. We stop at order 3.
+#this is the best possible method. we can use other methods to extract the stationarity of the data.
+#a quick brown fox jumps right over the lazy dog.
+summary(trend)
+
+
+error <- residuals(trend)
+
+ts.plot(error) #not stationary #all the dependencies not captured.
+acf(error)
+```
+
+
+```{r}
+AP <- AirPassengers
+ts.plot(AP) #]multiplicative
+```
+
+
+```{r}
+#log transform
+ts.plot(log(AP)) #additive model
+```
+```{r}
+#seasonal differencing:
+sd <- diff(log(AP), lag =12)
+ts.plot(sd)        #removed seasonal component
+```
+
+
+```{r}
+#removing trend component:
+td <- diff(sd)
+ts.plot(td)
+td
+
+
+library(forecast)
+Acf(td)               #2nd order differencing not required 
+```
+
+
+```{r}
+sd <- diff(log(AP))
+ts.plot(sd)        
+```
+
+
+```{r}
+td <- diff(sd,lag=12)  #seasonal
+ts.plot(td)
+td
+
+#same result
+
+```
+
+
+```{r}
+data1 <- read.csv(file.choose())
+```
+
+```{r}
+data1
+
+```
+
+
+```{r}
+class(data1)
+```
+
+
+```{r}
+df <- ts(data1, start = 1960,end = 1975, frequency = 12)
+df
+
+class(df)
+```
+```{r}
+ts.plot(df)   #additive 
+```
+
+
+```{r}
+sd <- diff(df, lag=12)
+ts.plot(sd)
+```
+```{r}
+td <- diff(sd)
+ts.plot(td)
+
+Acf(td)
+```
+
+```{r}
+#Augmented Dickey-Fuller test:
+
+```
+
+
+```{r}
+data2 <- globtemp
+data2
+```
+
+
+```{r}
+ts.plot(data2)
+```
+
+
+```{r}
+# Moving average 
+ma1 <- ma(data2, order =3)
+
+ma2 <- ma(data2, order =5)
+
+ma3 <- ma(data2, order =7)
+
+ma4 <- ma(data2, order =9)
+
+
+
+```
+
+```{r}
+par(mfrow = c(2,2))
+
+ts.plot(ma1)
+ts.plot(ma2)
+ts.plot(ma3)
+ts.plot(ma4)
+```
+
+
+```{r}
+error <- data2 - ma1
+ts.plot(error)
+
+length(error)
+newerror <- error[-1]
+newerror1 <- newerror[-135]
+newerror1
+
+#Augmented Dickey-Fuller test
+#H0: non-stationary
+#H1: stationary
+adf.test(newerror1)      #stationary
+```
+
+
+```{r}
+data3 <- gdp
+ts.plot(data3)
+```
+
+
+```{r}
+ma1 <- ma(data3, order =3)
+
+ma2 <- ma(data3, order =5)
+
+ma3 <- ma(data3, order =7)
+
+ma4 <- ma(data3, order =9)
+```
+
+```{r}
+par(mfrow = c(2,2))
+
+ts.plot(ma1)
+ts.plot(ma2)
+ts.plot(ma3)
+ts.plot(ma4)
+```
+
+```{r}
+error <- data3 - ma1
+ts.plot(error)
+
+length(error)
+newerror <- error[-1]
+newerror1 <- newerror[-286]
+newerror1
+
+#Augmented Dickey-Fuller test
+#H0: non-stationary
+#H1: stationary
+adf.test(newerror1)      #stationary
+```
+
+```{r}
+#Modelling AR(1) PROCESS
+#Simulation
+AR1 = arima.sim(model = list(ar = -0.8),n=500) 
+
+acf(AR1)   #oxcillating 
+
+pacf(AR1)   #PACF cuts off at lag 1. AR(p) cuts off at lag p
+
+ts.plot(AR1)
+
+adf.test(AR1)
+```
+
+
+```{r}
+#Simulation
+AR1 = arima.sim(model = list(ar = 0.9),n=1000) 
+
+acf(AR1)   #exp. decreasing.
+
+pacf(AR1)   #PACF cuts off at lag 1. AR(p) cuts off at lag p
+
+ts.plot(AR1)
+
+adf.test(AR1)
+tsdisplay(AR1)
+
+```
+
+
+```{r}
+x <-rnorm(1000)
+sim1 <- arima.sim(list(ar=(0.2)),n=500,innov = x)
+sim2 <- arima.sim(list(ar=(0.6)),n=500,innov = x)
+sim3 <- arima.sim(list(ar=(0.95)),n=500,innov = x)
+
+
+ts.plot(x)
+ts.plot(sim1)
+acf(sim3)
+pacf(sim3)
+```
+
+
+```{r}
+data1 <- read.csv(file.choose())
+data1
+attach(data1)
+```
+
+
+```{r}
+ts.plot(imp)
+ts.plot(diff(imp))
+acf(diff(imp))
+pacf(diff(imp)) #PACF cuts off at lag 1
+```
+
+
+```{r}
+library(forecast)
+fit = auto.arima(diff(imp),seasonal = 'FALSE') #automatically fits the best possible autoregressive model
+fit
+```
+AR(1) process. I(0). MA(0)
+Phi-one is -0.4602.
+
+```{r}
+#give whatever order that you suspect from the PACF
+arima(diff(imp),order = c(1,0,0))
+arima(diff(imp),order = c(2,0,0))
+```
+AR(1) is best suited as AIC is less when compared to AR(2).
+
+```{r}
+AR2= arima.sim(model=list(ar=c(-0.4,0.4)),n=100)
+acf(AR2)
+pacf(AR2)     #2 lags are significant
+```
+
+```{r}
+#Simulation
+ARMA1 = arima.sim(model = list(ma=c(0.3), ar=c(0.5) ),n=1000) 
+
+acf(ARMA1)   #1 significant lag
+
+pacf(ARMA1)   #PACF cuts off at lag 1. AR(p) cuts off at lag p
+
+ts.plot(ARMA1)
+
+```
+
+
+```{r}
+arma = arima.sim(model = list(ar=c(-0.4,0.1,0.4), ma =c(1, 0.2,0.4)), n=500)
+acf(arma)
+pacf(arma)   #will not help in understanding the orders p,q of ARMA(p,q). 
+
+#Step 1: Stationary data. Make the data stationary if non stationary
+#Step 2: auto.arima(stationary data) 
+#Step 3: Validate using graphical methods(ACF and PACF) 
+# ACF will indicate if the model is a good fit. 
+      
+
+```
+
+
+```{r}
+data <- globtemp
+ts.plot(data)
+acf(data)
+```
+
+
+```{r}
+#Apply differencing to extract stationary data
+newdata <- diff(data)
+ts.plot(newdata)
+```
+
+
+```{r}
+fit <- auto.arima(newdata)     #ARMA(1,3) model suspected
+summary(fit)
+acf(newdata)     #tells us about the order of MA. MA(2)
+pacf(newdata)   #tells us about the order of AR. AR(3)
+```
+
+```{r}
+#Residual analysis:
+r = resid(fit)
+acf(r)   #non-significant acf at different lags
+shapiro.test(r)  #p-value >0.05 -> fail to reject null hypothesis -> normal residuals
+Box.test(r,lag =4) #lag = p + q 
+qqnorm(r)
+qqline(r)
+```
+
+```{r}
+auto.arima(globtemp) #non-stationary ARIMA(1,1,3)
+```
+
+
+
+
+
+
+```{r}
+fit <- arima(order=c(3,0,2), newdata)
+summary(fit)      #less AIC
+```
+
+
+```{r}
+#Random walk
+z = c()
+z[1] =0 
+at = rnorm(100)
+at[1]
+for (i in 2:100){
+  z[i] = z[i-1] + at[i]        
+}
+
+z
+ts.plot(z)
+
+#differencing
+ts.plot(diff(z))
+acf(diff(z))           #stationary
+
+adf.test(z)            #stationary [p-value = 0.0192 -> reject null hypothesis]
+```
+
+
+```{r}
+#random walk with drift
+z=c()
+z[1]=0;
+at=rnorm(100)
+at[1]
+for(i in 2:100){
+  z[i]=0.8+z[i-1]+at[i]    #alpha =0.8
+}
+z
+ts.plot(z)
+adf.test(z)   #non-stationary
+
+ts.plot(diff(z))
+adf.test(diff(z)) #stationary
+
+```
+
+
+```{r}
+#deterministic trend
+z=c()
+
+at=rnorm(100)
+at[1]
+t=seq(1:100)
+#linear trend
+for(i in 2:100){
+  z[i]=0.8*t[i]+at[i]
+}
+
+z
+ts.plot(z)         #non-stationary       
+
+#diffencing
+ts.plot(diff(z))   #stationary
+
+```
+
+
+```{r}
+#polynomial trend
+for(i in 2:100){
+  z[i]=0.8*t[i]*t[i]+at[i]
+}
+z
+ts.plot(z)
+
+#differencing twice
+ts.plot(diff(z))
+ts.plot(diff(diff(z)))      #stationary
+```
+
+
+```{r}
+#Random Walk with drift and deterministic component
+z=c()
+z[1]=0;
+at=rnorm(100)
+at[1]
+for(i in 2:100){
+  z[i]=0.8+z[i-1]+0.8*t[i]+at[i]
+}
+
+z
+ts.plot(z)
+
+ts.plot(diff(z))
+```
+
+
+```{r}
+data <- read.csv(file.choose())
+```
+
+
+```{r}
+data 
+```
+
+
+```{r}
+#Extracting the target column and converting to a time series object:
+data1 <- ts(data$imp,  frequency = 4)
+data1
+```
+
+
+```{r}
+#Time series and ACF plot:
+ts.plot(data1 , ylab="Import", main ="Time series plot")  #random walk 
+
+Acf(data1, main =" ACF plot")
+```
+
+
+```{r}
+adf.test(data1)  #non-stationary
+```
+```{r}
+fit = auto.arima(data1 , seasonal = FALSE) #non-stationary model
+fit
+```
+```{r}
+# Forecasting can only be done only if residual analysis is satisfied:
+
+#Residual analysis for model 1:
+r = resid(fit)
+
+acf(r, main = "ACF plot of the residuals")            #non-significant acf at different lags.
+
+#Shapiro-Wilk test to check the normality of the residuals:
+#H0: Residuals are normal.
+#H1: Residuals are not normal.
+shapiro.test(r)  #p-value > 0.05 -> fail to reject null hypothesis -> normal
+#Q-Q plot:
+qqnorm(r)
+qqline(r)
+
+#Box-Pierce test to examine the null hypothesis of independence.
+#H0: There is no significant autocorrelation.
+#H1: There is some significant autocorrelation.
+Box.test(r,lag = 2, fitdf = 1) #lag = p + q; p=1, q= 1       
+#p-value > 0.05 -> fail to reject null hypothesis -> uncorrelated
+```
+
+```{r}
+#forecasting:
+forecast(fit, h = 4)    #h: no. of observations to be forecast.
+```
+
+```{r}
+#Holts exponential smoothing - trend in absence of seasonality
+data <- gnp
+ts.plot(data)
+```
+
+
+```{r}
+gnpforecasts <- HoltWinters(gnp, gamma = FALSE)  #gamma for seasonal component
+gnpforecasts$fitted #fitted values based on Holts smoothing      #in-sample forecast
+```
+
+
+```{r}
+gnpforecasts   
+#alpha:level
+#beta: slope component
+#less weightage for more recent observations - beta(n+1)
+#more weightage for more recent observations - m(n+1)
+#a : estimated value of the trend component m(n+1)
+#b: estimated value of slope component Beta(n+1)
+```
+
+
+```{r}
+plot(gnpforecasts)
+```
+
+```{r}
+#out-of-sample forecast
+forecast_data <- forecast(gnpforecasts, h=4)
+plot(forecast_data)
+```
+
+```{r}
+#simple exp smoothing:
+HoltWinters(diff(gnp), gamma = F, beta = F)   #data should be stationary
+```
+
+```{r}
+ts.plot(diff(gnp))
+acf(diff(gnp))
+```
+```{r}
+forecast(diff(gnp),h=4)     #not suitable data
+```
+
+```{r}
+data <- read.csv(file.choose())
+```
+
+
+```{r}
+ts.plot(data)  #additive in nature
+acf(data)
+```
+
+```{r}
+gas <- ts(data$Gasoline, start = 1960, frequency = 12)
+
+```
+
+```{r}
+gasforecasts <- HoltWinters(gas)  #gamma for seasonal component
+gasforecasts$fitted #fitted values based on Holt's smoothing      #in-sample forecast
+```
+
+```{r}
+gasforecasts
+```
+
+```{r}
+plot(gasforecasts)
+```
+
+
+```{r}
+#out of sample
+forecast_data <- forecast(gasforecasts, h = 12)
+forecast_data
+```
+
+```{r}
+data <- AirPassengers
+ts.plot(data)  #multiplicative 
+```
+```{r}
+ts.plot(log(data))
+```
+
+```{r}
+airforecasts <- HoltWinters(log(data))  #gamma for seasonal component
+airforecasts$fitted #fitted values based on Holts smoothing      #in-sample forecast
+```
+```{r}
+airforecasts
+```
+```{r}
+plot(airforecasts)
+```
+
+```{r}
+exp(airforecasts$fitted)
+```
+```{r}
+fr <- forecast(log(data))
+fr
+```
+

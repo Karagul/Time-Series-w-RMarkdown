@@ -1,0 +1,83 @@
+---
+title: "Untitled"
+author: "Nishanth Girish"
+date: '2023-03-10'
+output: word_document
+---
+
+```{r}
+#Impoering the necessary libraries:
+library(tseries)
+library(astsa)
+library(forecast)
+
+```
+
+DATA DESCRIPTION:
+The dataset used for this assignment is the in-built 'gas' dataset which is contained in the forecast library of R. The dataset shows the monthly gas production in Australia for the years 1956 to 1995. The data was collected by the Australian Bureau of Statistics.
+
+```{r}
+#Reading the data:
+data <- gas
+data
+```
+
+EXPLORATORY DATA ANALYSIS:
+```{r}
+#Checking if the object is a time series object:
+class(data)
+```
+It is a time series object.
+
+```{r}
+#Seasonal plot:
+seasonplot(gas)
+```
+
+
+```{r}
+#Time series plot:
+ts.plot(data)
+```
+
+INTERPRETATION:
+
+From the time series plot, it is clear that there is a trend component as there is an increasing trend. Also, there is a seasonal component. 
+Hence it is an multiplicative model [zt= mt * st * et]
+
+```{r}
+# Autocorrelation function plot:
+Acf(data)
+
+
+#Augmented Dickey-Fuller Test for Stationarity:
+#H0: non-stationary
+#H1: stationary
+adf.test(data)
+```
+
+INTERPRETATION:
+
+From the ACF plot, it can be observed that there is a repeating pattern which indicates seasonality. Hence, the data is non-stationary.
+
+Non-stationarity can be confirmed by the ADF test. The p-value is 0.2764 which implies that we fail to reject the null hypothesis( non-stationary). Hence, we conclude that the data is indeed non-stationary.
+
+```{r}
+#Applying log transformation:
+
+#Time series plot:
+ts.plot(log(data))
+
+#ACF plot:
+acf(log(data))
+
+#Augmented Dickey-Fuller Test for stationarity
+#H0: non-stationary
+#H1: stationary
+adf.test(log(data))
+```
+
+INTERPRETATION:
+
+Even after applying logarithmic transformation, we observe from the time series plot and ACF plot that there is a trend and seasonal component. Hence, the data is non-stationary.
+This is confirmed mathematically by the ADF test [p-value = 0.9811].

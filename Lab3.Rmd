@@ -1,0 +1,109 @@
+---
+title: "Untitled"
+author: "Nishanth Girish"
+date: '2023-03-16'
+output: word_document
+---
+
+```{r}
+#Importing the necessary libraries:
+library(tseries)
+library(astsa)
+library(forecast)
+```
+
+DATASET DESCRIPTION:
+
+The dataset used for this assignment is the Oil dataset which is contained in the 'astsa' library of R. It contains the weekly data from 2000 to mid-2010 of crude oil, WTI(West Texas Intermediate) spot price FOB(Free on board) in dollars per barrel. The source for this data is the Energy Information Administration which comes under the Department of Energy, US government.
+
+```{r}
+#Loading the dataset:
+data <- oil
+
+
+#Time series plot:
+ts.plot(data, ylab = "Spot price(in $/barrel)", main ="Time series plot")
+
+#ACF plot:
+Acf(data, main= "ACF plot")
+```
+
+INTERPRETATION:
+
+From the time series plot, it can be concluded that the data has a trend component and no seasonal component. Hence, we can say that this is an additive model as only trend and error components are present [zt = mt + et].
+
+```{r}
+#Method of differencing:
+newoil <- diff(data)     #applying differncing.
+
+#Time series plot and ACF of data after differencing:
+ts.plot(newoil,ylab="Spot price" , main="Time series plot after differencing")
+Acf(newoil,main="ACF plot after differencing")
+```
+
+INTERPRETATION:
+
+We observe that after differncing the data becomes stationary as evident from the time series plot[the data follows a random pattern] and ACF plot.
+
+```{r}
+#Ordinary least squares:
+time <- seq(1:length(oil))
+
+#Increasing the order:
+trend <- lm(oil ~ time )
+trend2 <- lm(oil ~ time +I(time^2))
+trend3 <- lm(oil ~ time +I(time^2) + I(time^3))
+trend4 <- lm(oil ~ time +I(time^2)+ I(time^3) + I(time^4) )
+trend5 <- lm(oil ~ time +I(time^2) + I(time^3) +I(time^4) +I(time^5))
+
+error <- residuals(trend)   #extracted version
+error2 <- residuals(trend2) #extracted version
+error3 <- residuals(trend3) #extracted version
+error4 <- residuals(trend4) #extracted version
+error5 <- residuals(trend5) #extracted version
+
+#Time series plots of the extracted versions.
+par(mfrow = c(2,2))
+ts.plot(error2,ylab="Spot price")
+ts.plot(error3,ylab="Spot price")
+ts.plot(error4,ylab="Spot price")
+ts.plot(error5,ylab="Spot price")    
+
+#ACF plots of the extracted versions.
+par(mfrow = c(2,2))
+Acf(error2,main="")
+Acf(error3,main="")
+Acf(error4,main="")
+Acf(error5,main="")
+
+#not stationary
+#all the dependencies not captured
+```
+
+INTERPRETATION:
+
+We applied the method of OLS estimation using different orders. However, a trend component is still present as evident from the ACF and time series plots. The ACF is not rapidly decreasing to zero after a few lags. This indicates that the data is non-stationary. We stop after order 5 as there is no change in ACF after order 5. All dependencies are not captured
+
+```{r}
+#Method of moving average smoothing:
+
+ma1 <- ma(data, order =3) #Moving average of order 3.
+
+error <- data - ma1
+ts.plot(error, ylab = "Spot price", main = "Time series plot after MA smoothing")
+
+length(error)
+newerror <- error[-1]        
+newerror1 <- newerror[-544]    #removing missing values from the extracted version
+
+acf(newerror1, main = "ACF plot after MA smoothing")
+#Augmented Dickey-Fuller test
+#H0: non-stationary
+#H1: stationary
+adf.test(newerror1)      #stationary
+```
+
+INTERPRETATION:
+
+We applied a moving average smoothing of order 3. From the time series plot of the extracted version, we observe that the data follows a random pattern indicating that it might be stationary. The ACF also rapidly decrease to zero after the first lag.
+We confirm stationarity using Augmented Dickey-Fuller test. The p-value is < 0.01 which implies that we reject the null hypothesis( data is non-stationary). Hence, we conclude that the data is indeed stationary.

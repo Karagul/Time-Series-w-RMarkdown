@@ -1,0 +1,105 @@
+---
+title: "MST371_2248111_Lab7"
+author: "Nishanth Girish"
+date: "2023-05-05"
+output: word_document
+---
+
+```{r}
+#impoering the necessary libraries:
+library(tseries)
+library(astsa)
+library(forecast)
+library(seastests)
+```
+
+DATASET DESCRIPTION:
+
+The dataset used for this assignment is the qintr dataset which is contained in the ‘astsa’ library of R. It contains the quarterly data from 1953(Q1) to 1980(Q2) of nterest rate recorded for Treasury bills. The source for this data is Newbold, P. and T. Bos (1985). Stochastic Parameter Regression Models. Beverly Hills: Sage.
+
+
+
+```{r}
+#Time series and ACF plot:
+data1 <- qintr
+ts.plot(data1 , ylab="Interest Rate", main ="Time series plot")
+
+Acf(data1, main =" ACF plot")
+```
+
+INTERPRETATION:
+
+From the time series plot, it can be concluded that the data has a trend component and it does not have a seasonal component. It is not stationary. Hence, we can say that this is an additive model as trend and error components are present [zt = mt +  et].
+From the ACF plot we can observe that there is no repeating pattern and the ACF does not rapidly decreaase to 0.
+
+```{r}
+#Checking for seasonality:
+isSeasonal(data1, test = "combined",freq = 4)
+isSeasonal(data1, test = "qs", freq = 4)
+isSeasonal(data1, test = "kw", freq = 4)
+isSeasonal(data1, test = "fried", freq = 4)
+isSeasonal(data1, test = "welch", freq = 4)
+```
+
+INTERPRETATION:
+
+The data is not  seasonal in nature as confirmed by the combined-test, Kruskal-Walis test, Friedman test, Welch test, QS test.
+
+```{r}
+# Holt's Exponential Smoothing:
+data_forecasts <- HoltWinters(data1, gamma = FALSE)  #gamma = FALSE as there is no seasonal component.
+```
+
+
+```{r}
+data_forecasts
+#alpha: smoothing parameter corresponding to the level component
+#beta: smoothing parameter corresponding to the slope component
+#less weightage for more recent observations - beta(n+1)
+#more weightage for more recent observations - m(n+1)
+#a : estimated value of the trend component m(n+1)
+#b: estimated value of slope component Beta(n+1)
+```
+
+INTERPRETATION:
+
+Holt-Winters exponential smoothing with trend and without seasonal component has alpha or level(mean) of the trend component as 1 i.e more weightage is given to the recent observations while estimating m(n+1). The slope is given by beta = 0.005708171 i.e less weightage given to the more recent observations while
+estimating the values of beta(n+1).
+
+```{r}
+#In-sample forecast:
+data_forecasts$fitted   #fitted values based on Holt's exponential smoothing      
+```
+
+```{r}
+#Plot:
+plot(data_forecasts)
+```
+INTERPRETATION:
+
+The observed(black line) v/s fitted(red line) lines approximately coincide with each other. 
+
+```{r}
+#Out-of-sample forecast using the in-built forecast() command:
+forecast_out <- forecast(data_forecasts, h=3)        #h=3 -> 3-step ahead forecast.
+forecast_out
+
+#Plot:
+plot(forecast(data_forecasts, h=3))
+```
+
+```{r}
+#Accuracy measures:
+accuracy(forecast_out)
+```
+
+INTERPRETATION:
+
+The mean error of the forecast is: -0.07174777 which is close to zero.
+The root mean square error of the forecast is: 0.7148791 which implies that the mean square error is 0.511.
+The model is a good fit as the error metrics are low.
+
+```{r}
+mean(data1 - data_forecasts$fitted)
+```
+

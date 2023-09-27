@@ -1,0 +1,135 @@
+---
+title: "MST371_Lab-5"
+author: "Nishanth Girish"
+date: "2023-04-21"
+output: word_document
+---
+
+```{r}
+#Importing the necessary libraries:
+library(tseries)
+library(astsa)
+library(forecast)
+library(seastests)
+```
+
+DATASET DESCRIPTION:
+
+The dataset used for this assignment is the Oil dataset which is contained in the ‘astsa’ library of R. It contains the weekly data from 2000 to mid-2010 of crude oil, WTI(West Texas Intermediate) spot price FOB(Free on board) in dollars per barrel. The source for this data is the Energy Information Administration which comes under the Department of Energy, US government.
+
+```{r}
+#Time series and ACF plot:
+data1 <- oil
+ts.plot(data1 , ylab="Spot price", main ="Time series plot")
+
+Acf(data1, main =" ACF plot")
+```
+
+INTERPRETATION:
+
+From the time series plot, it can be concluded that the data has a trend component and it does not have a seasonal component. It is not stationary. Hence, we can say that this is an additive model as trend and error components are present [zt = mt +  et].
+From the ACF plot we can observe that there is no repeating pattern and the ACF does not rapidly decreaase to 0.
+
+```{r}
+#Confirming seasonality:
+isSeasonal(data1, test = "combined",freq = 52)
+isSeasonal(data1, test = "qs", freq = 52)
+isSeasonal(data1, test = "kw", freq = 52)
+isSeasonal(data1, test = "fried", freq = 52)
+isSeasonal(data1, test = "welch", freq = 52)
+```
+
+INTERPRETATION:
+
+The data is not  seasonal in nature as confirmed by the combined-test, Kruskal-Walis test, Friedman test, Welch test, QS test.
+
+```{r}
+#Method of differencing:
+newoil <- diff(data1)     #applying differencing.
+diff2 <- diff(newoil)     #applying differencing again
+
+
+#Time series plot and ACF of data after differencing:
+ts.plot(diff2,ylab="Spot price" , main="Time series plot after differencing")
+acf(diff2, main="ACF plot after differencing")
+pacf(diff2, main ="PACF Plot after differencing")
+```
+
+INTERPRETATION:
+We observe that after differncing the data becomes stationary as evident from the time series plot[the data follows a random pattern] and ACF plot [the ACF decreases to zero rapidly].
+
+```{r}
+#1. Fit a suitable ARMA model for describing the patterns in the model. Draw your conclusions.
+
+
+# Automatically fitting an  ARMA model:
+fit <- auto.arima(diff2,seasonal=FALSE)     
+summary(fit)
+
+
+acf(diff2 , main ="ACF Plot")     #tells us about the order of MA. MA(1)
+pacf(diff2, main = 'PACF Plot')   #tells us about the order of AR. AR(3)
+```
+
+INTERPRETATION:
+
+The model automatically fitted for us is the ARMA(1,1) process. The parameter phi-1 for the AR process is  0.1151 and the parameter theta-1 is -0.9286. The AIC value of the model is 2575.94. The variance of the ARMA(1,1) process is 6.643. The mean of the ARMA(1,1) process is -0.0017. The BIC of the model 2593.13.
+
+```{r}
+#2. Which model is suitable among the class of ARMA models, while examining the ACF and PACF plot of the stationary data? 
+#3. Fit the suitable model based on the answer you obtained from Question No.2. Can you say it is the best fitted model for the given data?
+
+
+# We suspect an ARMA of different orders from the PACF and ACF plots.
+arima(diff2,order = c(1,0,1))   # auto.arima model
+
+
+# Fitting ARMA models based on the ACF and PACF plots of the stationary data:
+arima(diff2, order = c(4,0,1))
+arima(diff2, order = c(5,0,1))
+arima(diff2, order = c(6,0,1))
+```
+
+```{r}
+best_fit <- arima(diff2, order = c(5,0,1))
+summary(best_fit)
+```
+
+INTERPRETATION:
+
+AFter fitting ARMA(4,1), ARMA(5,1) & ARMA(6,1) we observe that the ARMA(5,1) is the best model as the  AIC value is the least among the fitted models [AIC = 2571.63].
+The AR paramaters phi-1, phi-2, phi-3, phi-4, and phi-5 are: 0.1684, 0.0095, 0.0969, 0.0110, 0.0652 respectively. The MA parameter theta-1 is: -1.0000.
+The variance of the ARMA(5,1) process is 6.414. 
+
+```{r}
+#4. Examine the residual analysis for the best fitted model.
+
+#Residual analysis:
+r = resid(best_fit)
+
+acf(r, main = "ACF plot of the residuals")            #non-significant acf at different lags.
+
+#Shapiro-Wilk test to check the normality of the residuals:
+#H0: Residuals are normal.
+#H1: Residuals are not normal.
+shapiro.test(r)  #p-value >0.05 -> fail to reject null hypothesis -> normal residuals
+
+#Box-Pierce test to examine the null hypothesis of independence.
+#H0: There is no significant autocorrelation.
+#H1: There is some significant autocorrelation.
+Box.test(r,lag = 6) #lag = p + q; p=5, q= 1
+
+#Q-Q plot:
+qqnorm(r)
+qqline(r)
+```
+
+INTERPRETATION:
+
+1. From the ACF plot of the residuals we can observe that it is stationary as all the ACFs for different lags lie within the threshold limit and rapidly decreases to zero.
+
+2. The p-value of the Shapiro-Wilk test is 1.332e-15 (< 0.05). Hence, we reject the null hypothesis that the residuals are normal and conclude that the residuals are not normally distributed.
+
+3. The p-value of the Box-Pierce test is 0.9979 (> 0.05). Hence, we fail to reject the null hypothesis that there is no significant autocorrelation.
+
+4. From the Q-Q plot it is evident that the residuals are not normally distributed.
