@@ -1,0 +1,215 @@
+---
+title: "CAC_2_Presentation"
+author: "Jayprakash Kakde"
+date: "2023-05-03"
+output: word_document
+---
+
+
+##### Loading Data ######
+
+```{r}
+# Load the required packages
+library(tseries)
+library(astsa)
+library(readxl)
+library(forecast)
+library(ggplot2)
+
+# Load an inbuilt dataset for seasonal time series analysis
+# Here we will use the "AirPassengers" dataset, which contains monthly airline passenger numbers from 1949 to 1960
+data(AirPassengers)
+#AirPassengers
+
+# Time Serise plot of Air Passenger
+plot(AirPassengers, main = "Monthly Airline Passenger Numbers")
+```
+
+
+
+
+##### Indentification/Detection of seasonality #####
+
+By graphical way
+
+```{r}
+# Decompose the time series into its components (trend, seasonal, and residual)
+decomp_ts <- decompose(AirPassengers, type = "multiplicative")  
+
+# multiplicative method works well for non-linear data
+plot(decomp_ts)
+```
+
+
+```{r}
+#Box plot across months will give us a sense on seasonal effect
+boxplot(AirPassengers~cycle(AirPassengers))
+```
+
+
+```{r}
+## Generate the seasonal subseries plot.
+par(mfrow=c(1,1))
+monthplot(AirPassengers,phase=cycle(AirPassengers), base=mean, 
+          ylab="Number of Air Passengers", xlab="Month",
+         main="Seasonal Subseries Plot of Air Passengers",
+         labels=c("Jan","Feb","Mar","Apr","May","Jun",
+                  "Jul","Aug","Sep","Oct","Nov","Dec"))
+```
+
+
+
+By hypothesis testing 
+
+```{r}
+library(seastests)
+
+fried(AirPassengers, diff = T)
+```
+
+
+
+##### Elimination/Removing of seasonality #####
+
+```{r}
+# Elimination of seasonality by method of differencing 
+AirPassengers_Differencing = diff(AirPassengers, lag = 12)
+tsplot(AirPassengers_Differencing)
+
+
+# Elimination of seasonality by method of moving average smoothing
+AirPassengers_Smoothed <- ma(AirPassengers, order = 12)
+plot(AirPassengers)
+lines(AirPassengers_Smoothed, col = "blue", lwd=2)
+```
+
+
+
+#####  Building SARIMA Model  #####
+
+```{r}
+# Fitting the model
+
+# Split the data into training and test sets
+train <- window(AirPassengers, end = c(1959, 12))
+test <- window(AirPassengers, start = c(1960, 1))
+
+# Fit a SARIMA model to the training data
+sarima_model <- auto.arima(train, seasonal = TRUE)
+
+# Print the summary of the model
+summary(sarima_model)
+#print("#########################################################################################")
+
+# Plot the residuals of the model
+checkresiduals(sarima_model)
+```
+
+
+
+```{r}
+# Checking accuracy of model
+
+# Forecast the next 12 months using the fitted model
+sarima_forecast <- forecast(sarima_model, h = 12)
+
+# plot the forecasts against the actual values
+plot(sarima_forecast, main = "Holt-Winters Forecast for AirPassengers", col = "blue",lwd=1.5)
+lines(test, col = "red", lwd = 3)
+legend("topleft", legend = c("Actual", "Forecast"), col = c("blue", "red"), lty = 1)
+
+# Calculate the accuracy of the forecast
+accuracy(sarima_forecast, test)
+```
+
+
+
+
+##### Building Holt Winter Exponential smoothing model #####
+
+```{r}
+# Fitting the model
+
+# # perform train-test split
+# train_data <- window(AirPassengers, end = c(1959, 12))
+# test_data <- window(AirPassengers, start = c(1960, 1))
+
+# apply Holt-Winters method to the training data
+hw_model <- HoltWinters(train)
+
+# make forecasts for the test data using the fitted model
+hw_forecast <- forecast(hw_model, h = length(test))
+
+# Print the summary of the model
+summary(hw_model)
+print("#########################################################################################")
+
+# Plot the residuals of the model
+checkresiduals(hw_model)
+```
+
+
+
+```{r}
+# Checking accuracy of model
+
+# plot the forecasts against the actual values
+plot(hw_forecast, main = "Holt-Winters Forecast for AirPassengers", col = "blue" ,lwd=1.5)
+lines(test, col = "red", lwd = 3)
+legend("topleft", legend = c("Actual", "Forecast"), col = c("blue", "red"), lty = 1)
+
+# calculate accuracy metrics for the forecasts
+accuracy(hw_forecast, test)
+
+```
+
+##### Seasonal Naive Model ######
+
+```{r}
+# # Generate seasonal time series data
+# seasonal_data <- ts(data = rnorm(48, 100, 10), start = c(2010, 1), frequency = 12)
+
+# # Plot the seasonal data
+# plot(seasonal_data, main = "Seasonal Time Series Data")
+
+# Forecast of seasonal naive model
+Naive_Forecast = snaive(log(AirPassengers), h= 12)
+
+# Plot of forecast
+plot(Naive_Forecast)
+```
+
+
+
+##### Rough  #####
+
+```{r} 
+# Use the seasonal component to forecast future values
+# Here we will use the Holt-Winters method, which is a popular method for seasonal time series forecasting
+hw_forecast <- HoltWinters(AirPassengers, seasonal = "multiplicative")
+hw_pred <- forecast(hw_forecast, h = 12)  # 12 months forecast
+plot(hw_pred)
+```
+
+
+```{r} 
+# auto.arima function to automatically select the best ARIMA model for the data
+# This can be a helpful shortcut if you are unsure which model to use
+arima_model <- auto.arima(AirPassengers)
+arima_forecast <- forecast(arima_model, h = 12)
+plot(arima_forecast)
+
+# Evaluate the accuracy of the forecast using different metrics
+accuracy(arima_forecast)
+```
+
+
+```{r}
+# Plot the forecasted values along with the actual values
+autoplot(AirPassengers) +
+  autolayer(sarima_forecast$mean, series = "SARIMA Forecast") +
+  xlab("Year") +
+  ylab("Passenger Count") +
+  labs(title = "Monthly Air Passengers")
+```
+

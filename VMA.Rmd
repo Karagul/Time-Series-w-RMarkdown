@@ -1,0 +1,83 @@
+---
+title: "VMA_Model"
+author: "CHODAVARAPU BHAVANA"
+date: "2023-05-11"
+output: word_document
+---
+
+```{r}
+library(tseries)
+library(astsa)
+library(forecast)
+library(MTS)
+library(ggplot2)
+library(vars)
+```
+
+```{r}
+df<-Canada
+head(df)
+class(df)
+length(df)
+```
+
+
+
+```{r}
+# Plot the time series
+ts.plot(df, col=1:ncol(df), main="Multivariate Time Series")
+
+par(mfrow=c(2,2), mar=c(4,4,4,4), cex.axis=1.5, cex.lab=1.2)
+for (i in 1:ncol(df)) {
+  ts.plot(df[,i])
+  mtext(paste("Time Series Plot of", colnames(df)[i]), side=3, line=0.5)
+}
+
+par(mfrow=c(2,2), mar=c(4,4,4,4), cex.axis=1.5, cex.lab=1.2)
+for (i in 1:ncol(df)) {
+  acf(df[,i])
+  mtext(paste("ACF Plot of", colnames(df)[i]), side=3, line=0.5)
+}
+```
+```{r}
+cor_matrix <- cor(df)
+print(cor_matrix)
+```
+
+```{r}
+data<-diff(df)
+```
+
+```{r}
+# Plot the time series
+ts.plot(data, col=1:ncol(data), main="Multivariate Time Series")
+
+par(mfrow=c(2,2), mar=c(4,4,4,4), cex.axis=1.5, cex.lab=1.2)
+for (i in 1:ncol(data)) {
+  ts.plot(data[,i])
+  mtext(paste("Time Series Plot of", colnames(data)[i]), side=3, line=0.5)
+}
+
+par(mfrow=c(2,2), mar=c(4,4,4,4), cex.axis=1.5, cex.lab=1.2)
+for (i in 1:ncol(data)) {
+  acf(data[,i])
+  mtext(paste("ACF Plot of", colnames(data)[i]), side=3, line=0.5)
+}
+```
+
+```{r}
+fit<-VMA(data,q=1)
+summary(fit)
+```
+```{r}
+fit1<-VMA(data,q=2)
+summary(fit1)
+```
+
+```{r}
+#Normality check of residuals
+r=resid(fit)
+shapiro.test(r)
+qqnorm(r)
+qqline(r)
+```

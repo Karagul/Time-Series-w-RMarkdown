@@ -1,0 +1,93 @@
+Loading the necessary packages
+```{r}
+library(tseries)
+library(astsa)
+library(forecast)
+library(seastests)
+
+```
+MULTIPLICATIVE SEASONAL MODEL
+Getting the data
+```{r}
+data("JohnsonJohnson")
+#Checking if the data is time series object
+class(JohnsonJohnson)
+ts.plot(JohnsonJohnson,main="Time series plot for JohnsonJohnson")
+Acf(JohnsonJohnson,main="ACF plot for JohnsonJohnson")
+
+```
+
+In classical time series series approach we make an assumption that data is stationary but in the presence of trend or seasonality the data is not stationary so we can make this non-stationary data stationary.
+Here in our model we have both trend and seasonality.So we remove trend first using moving average smoothing technique.
+
+```{r}
+moving_average = ma(JohnsonJohnson,order=3)
+#This estimates the trend component in our data. Since our data is multiplicative in nature unlike in an additive model we divide this moving average from our data and thus deleting that trend component.
+
+data_notrend = JohnsonJohnson/moving_average
+ts.plot(data_notrend,main="Time series plot without trend")
+#Now we see that trend is removed but we confirm that seasonality is not removed and thus it is still not stationary.
+isSeasonal(data_notrend)
+#Removing seasonality
+#JohnsonJohnson is quaterly data so period of seasonality is 4 hence for eliminating this seasonality we differenec the data by order of 4.
+data_noseasonal = diff(data_notrend,lag=4)
+ts.plot(data_noseasonal,main="Time series plot without trend and seasonality")
+Acf(data_noseasonal,main="ACF plot without trend and seasonality")
+```
+From the ACF plots and time series plot we see that both trend and seasonality are removed from our data.
+Multiplicative models can also be transformed into additive models easily by using log transformations and they behave exactly like an additive model and lose all their properties as a multiplicative model.
+
+```{r}
+log_JJ = log(JohnsonJohnson)
+ts.plot(log_JJ,main="time series plot for log(JJ)")
+```
+Once our model model is transformed all the analysis would not be on the original data but on the log transformed.
+
+SARIMA MODELS
+When the data has seasonality even when we use ARIMA model the seasonality is not properly handled that is when SARIMA models come into picture.
+
+```{r}
+data("co2")
+class(co2)
+ts.plot(co2,main="Time series plot for CO2")
+Acf(co2,lag=150,main="ACF plot for CO2")
+seasonplot(co2)
+ndiffs(co2)
+nsdiffs(co2)
+```
+We see that there is seasonality in our data and the pattern of seasonality in each year can also be observed.
+Since seasonality is there we go ahead for SARIMA models.
+
+```{r}
+auto.arima(co2)
+```
+
+
+```{r}
+sarima(co2,1,1,1,P=1,Q=2,D=1,S=12)
+```
+Here we see that there is AR and MA with respect to trend as well as AR and MA with respect to seasonality as well and 12 is the period of seasonality. This is an integrated model and therefore on differencing once the trend and on differencing once with respect to period 12 the model becomes SARMA.
+
+```{r}
+td = diff(co2)
+sd = diff(td,lag=12)
+Acf(sd,main="ACF plot after differencing")
+Pacf(sd,main="PACF plot after differencing")
+auto.arima(sd)
+```
+We know that the number of lags to be included in the model are identified using ACF and PACF lags for MA and AR process. ACF plots determine the number of lags in MA process and PACF for AR process. Here also we can verify this after fitting the model need not be accurate. So here in PACF we have significant lag at 1 indicating order of AR(1) for trend and significant lag at 12 and 24 indicating MA(2) of trend .Similarly in ACF we have significant lag at 1 indicating AR(1) for seasonality and significant lag at 12 indicating MA(1).
+Here we see that on differencing the data we get a better model compared to that of integrated model.
+To verify that the model is better when SARIMA is considered, we compare the ARIMA model that is without considering the seasonality and compare the AIC values
+```{r}
+sarima(sd,1,0,2,P=1,D=0,Q=1,S=12)
+```
+
+```{r}
+arma_model = arima(sd,order=c(1,0,1))
+arma_model
+Model=c("ARIMA(1,0,2)(1,0,1)[12]","ARIMA(1,0,1)(1,0,2)[12]","ARIMA(1,1,1)(1,1,2)[12]","ARIMA(1,0,1)")
+AIC=c(179.24,180.2,180.7,394.69)
+model_data = data.frame(Model,AIC)
+model_data
+```
+Here the AIC is value is very high compared to our SARIMA model and the reason is because seasonality is not treated properly here thus making SARIMA models better for handling data with seasonality.

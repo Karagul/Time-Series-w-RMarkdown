@@ -1,0 +1,99 @@
+---
+title: "Presentation"
+author: "Sreelakshmi Shibu"
+date: "2023-05-09"
+output: word_document
+---
+
+
+
+```{r}
+library(astsa)
+library(tseries)
+library(forecast)
+library(vars)
+library(urca)
+```
+
+
+
+
+
+Data: Nelson–Plosser Macroeconomic Time Series : 14 macroeconomic time series
+```{r}
+data("NelPlo")
+n=NelPlo
+data3=n[-(1:50),]
+td=data3[,-c(1,2,3,4,5,6,7,8,9,10)]
+td2=data.frame(td)
+
+tsd=ts(td,start=1910,frequency = 1)
+head(tsd)
+ggplot2::autoplot(tsd)
+ts.plot(td2$stock.prices)
+ts.plot(td2$gnp.capita)
+ts.plot(td2$real.wages)
+ts.plot(td2$unemp)
+Acf(td2$stock.prices)
+Acf(td2$gnp.capita)
+Acf(td2$real.wages)
+Acf(td2$unemp,lag=30)#as the lags are gradually approaching to zero we can say this variable is stationary.
+
+```
+Without removing the trend we will first build the model because we can include the trend directly in the VAR model with the VAR command.
+```{r}
+#Selecting the lags
+VARselect(tsd,lag.max=5,type="both")
+#The function returns information criteria and final prediction error for sequential increasing the lag order up to a VAR(p)-proccess. which are based on the same sample size.
+
+model_1=VAR(tsd,p=2,type="both")
+model_1
+AIC(model_1)
+summary(model_1)
+
+```
+Now removing the trend by the method of differencing
+```{r}
+d1=diff(td2$stock.prices)
+d2=diff(td2$gnp.capita)
+d3=diff(td2$real.wages)
+d4=td2$unemp #not doing differencing as it is already stationary.
+ts.plot(d1)
+Acf(d1)
+ts.plot(d2)
+Acf(d2)
+ts.plot(d3)
+Acf(d3)
+ts.plot(d4)
+Acf(d4)
+
+```
+```{r}
+x=cbind(d1,d2,d3,d4)
+#The cbind command creates a vector of response variables (a necessary step for multivariate responses).
+
+#Selecting the lags
+VARselect(x,lag.max=5,type="const")
+
+model_2=VAR(tsd,p=1,type="const")
+model_2
+AIC(model_2)
+summary(model_2)
+
+```
+Diagnosing the VAR
+
+```{r}
+#H0:There is no serial correlation
+serial.test(model_1,lags.pt=10)
+
+#Heteroscedasticity
+#Ho:No Heteroscedasticity
+arch.test(model_1,lags.multi =10)
+
+#Normal distribution of residuals
+normality.test(model_1,multivariate.only=TRUE)
+
+```
+
+.

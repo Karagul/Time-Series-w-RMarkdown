@@ -1,0 +1,61 @@
+
+#Importing necessary libraries
+```{r}
+library(urca)
+library(tseries)
+library(astsa)
+library(tsDyn)
+```
+
+#Checking the class of chosen data
+```{r}
+data("econ5")
+unemp<-econ5[,1]
+gnp<-econ5[,2]
+class(unemp)
+class(gnp)
+ts.plot(unemp)
+ts.plot(gnp)
+```
+#Checking for stationarity of the two series
+#H0:Data is non-stationary
+#H1:Data is stationary
+```{r}
+adf.test(unemp)
+adf.test(gnp)
+```
+#p-value for both >0.05, we fail to reject H0.
+
+#Combining the two series
+```{r}
+data<-cbind(unemp,gnp)
+```
+
+#Selecting the appropriate lag/ order of integration
+```{r}
+lags.select(data)
+```
+
+#JOHANSEN COINTEGRATION TEST
+#H0:no cointegration
+#H1:presence of cointegration
+#Type trace
+```{r}
+test1<-ca.jo(data,type="trace",K=3)
+summary(test1)
+```
+#for r <= 1:
+#Null hypothesis: The rank of the cointegration matrix is less than or equal to 1, indicating the presence of at most one cointegration relationship between the variables.
+#Alternative hypothesis: The rank of the cointegration matrix is greater than 1, indicating the presence of more than one cointegration relationship between the variables.
+#for r = 0:
+#Null hypothesis: The rank of the cointegration matrix is 0, indicating no cointegration relationship between the variables.
+#Alternative hypothesis: The rank of the cointegration matrix is greater than 0, indicating the presence of at least one cointegration relationship between the variables.
+#At 5% level of significance- at most one cointegration relationship between the variables
+
+#Type eigen
+```{r}
+test2<-ca.jo(data,type="eigen",K=3)
+summary(test2)
+```
+#At 5% level of significance- there exists at most one cointegration relationship among the variables
+
