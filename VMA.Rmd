@@ -1,9 +1,3 @@
----
-title: "VMA_Model"
-author: "CHODAVARAPU BHAVANA"
-date: "2023-05-11"
-output: word_document
----
 
 ```{r}
 library(tseries)
