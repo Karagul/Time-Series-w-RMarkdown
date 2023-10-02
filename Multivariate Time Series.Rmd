@@ -1,0 +1,111 @@
+```{r}
+library(tseries)
+library(forecast)
+library(astsa)
+library(vars)
+```
+#About the Dataset(CANADA)
+
+This dataset contains information about the Canadian Labour Productivity(prod), Employment Rate(e), Unemployment Rate(u) and the Real Wages(rw) from the year 1980 to 2000 and is a Quarterly Data.
+
+```{r}
+#Downloading the data
+data=Canada
+head(data)
+```
+```{r}
+#Checking if Time Seires Data or not
+class(data)
+
+#We see that it is a Multivariate Time Series.
+```
+
+```{r}
+#TIME SERIES PLOT
+par(mfrow=c(2,2))
+
+ts.plot(data[,1],ylab= 'Employment', main="Employment")
+ts.plot(data[,2],ylab= 'Productivity', main="Productivity")
+ts.plot(data[,3],ylab= 'Real Waget', main="Real Wage")
+ts.plot(data[,4],ylab= 'Unmployment', main="Unemployment")
+
+#We see that trend exists in some series of our data, we check stationarity using the ACF PACF PLOTS.
+```
+
+```{r}
+#ACF/PACF of all individual series 
+
+par(mfrow=c(2,2))
+for(i in 1:ncol(data)){
+  Acf(data[,i], main=paste("ACF -", names(data)[i]))
+  pacf(data[,i], main=paste("PACF -", names(data)[i]))
+}
+
+#Conclusion: We observe that the ACF plots of all the 4 variables are not rapidly decreasing to 0, hence they are not stationary.
+```
+
+```{r}
+#Converting to Stationary using DIFFERENCING
+data1=diff(data)
+
+#plotting tsplot 
+par(mfrow=c(2,2))
+
+ts.plot(data1[,1],ylab= 'Employment',main="Employment")
+ts.plot(data1[,2],ylab= 'Productivity',main="Productivity")
+ts.plot(data1[,3],ylab= 'Real Wage',main="Real Wage")
+ts.plot(data1[,4], ylab= 'Unemployment',main="Unemployment")
+
+#We observe randomness, we confirm stationarity using ACF/PACF plots
+```
+
+```{r}
+#ACF/PACF of all individual series after differencing
+
+par(mfrow=c(2,2))
+for(i in 1:ncol(data1)){
+  Acf(data1[,i], main=paste("ACF -", names(data1)[i]))
+  pacf(data1[,i], main=paste("PACF -", names(data1)[i]))
+}
+
+#Conclusion: We observe that the ACF plots of all the 4 variables are rapidly decreasing to 0, hence they are stationary.
+```
+#VAR(P) MODELING
+
+Now in a VAR(p) model we need to know how many lags(p) to be considered for the modeling.
+Through the ACF/PACF plots we see that most of the variable have a significant correlation upto lag 2. Hence we can consider p=2 for our modelling.
+
+But to check whether this is the best model ,we fit the VAR(p) model for p=1,2,3 and then check the AIC values to find the best model.
+
+```{r}
+#Fitting the model for p=1,2,3
+VAR1=VAR(data1,p=1)
+VAR2=VAR(data1,p=2)
+VAR3=VAR(data1,p=3)
+
+#Checking AIC values
+AIC(VAR1)
+AIC(VAR2)
+AIC(VAR3)
+
+#Conclusion: We see that the AIC value for VAR(2) model is the least hence we move forward with it.
+```
+
+```{r}
+#Getting the Coefficients
+
+VAR2
+
+#Interpretation: For each of the 4 variables in our multivariate time series, we get the estimated value of coefficients. Since lag=2 was considered in our model,each variable is based on the previous 2 lags of all the 4 variables.
+```
+```{r}
+#FORECASTING
+
+predict(VAR2,n.ahead = 4)
+
+#Now these predicted values are the Differenced predicted values. We need to transform this back to get the actual differenced values.
+```
+#############################################################################
+
+
+
